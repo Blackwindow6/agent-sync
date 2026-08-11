@@ -1,0 +1,49 @@
+{
+  "name": "agent-sync",
+  "version": "0.2.0",
+  "description": "One AGENTS.md → sync to OpenAI Codex, Claude Code, Cursor, Copilot, Gemini, Windsurf, Aider, and more.",
+  "type": "module",
+  "bin": {
+    "agent-sync": "./bin/agent-sync.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "start": "node bin/agent-sync.mjs",
+    "test": "node --test test/*.test.mjs",
+    "demo": "node bin/agent-sync.mjs -C examples/demo-project apply"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Blackwindow6/agent-sync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Blackwindow6/agent-sync/issues"
+  },
+  "homepage": "https://github.com/Blackwindow6/agent-sync#readme",
+  "keywords": [
+    "agents.md",
+    "claude-code",
+    "cursor",
+    "copilot",
+    "codex",
+    "gemini",
+    "aider",
+    "windsurf",
+    "ai-coding",
+    "developer-tools",
+    "sync"
+  ],
+  "author": "Blackwindow6",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "source": "AGENTS.md",
+  "mode": "auto",
+  "protectUnmanaged": true,
+  "targets": {
+    "codex": true,
+    "codex-agents": true,
+    "claude": true,
+    "copilot": true,
+    "cursor-legacy": false,
+    "cursor-rules": true,
+    "gemini": false,
+    "windsurf": false,
+    "aider": false,
+    "cline": false,
+    "continue": false
+  }
+}

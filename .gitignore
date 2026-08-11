@@ -1,0 +1,31 @@
+# Dependencies / logs
+node_modules/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local overrides
+AGENTS.override.md
+
+# Demo: keep source + config; ignore generated tool files after apply
+examples/demo-project/CLAUDE.md
+examples/demo-project/GEMINI.md
+examples/demo-project/CONVENTIONS.md
+examples/demo-project/.cursorrules
+examples/demo-project/.clinerules
+examples/demo-project/.windsurfrules
+examples/demo-project/AGENTS.override.md
+examples/demo-project/.github/
+examples/demo-project/.cursor/
+examples/demo-project/.continue/
+examples/demo-project/.codex/
+
+# Scratch notes (not part of the tool)
+codex_agents_md.md
