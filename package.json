@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "start": "node bin/agent-sync.mjs",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test",
     "demo": "node bin/agent-sync.mjs -C examples/demo-project apply"
   },
   "repository": {
