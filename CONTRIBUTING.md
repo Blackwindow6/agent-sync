@@ -25,9 +25,10 @@ No `npm install` needed — zero runtime dependencies.
 | Path | Role |
 |------|------|
 | `bin/agent-sync.mjs` | CLI entry |
-| `src/cli.mjs` | Commands & flags |
-| `src/sync.mjs` | apply / check / plan |
-| `src/targets.mjs` | Per-tool adapters |
+| `src/cli.mjs`, `src/cli-*.mjs` | Command dispatch, flags, and handlers |
+| `src/sync.mjs`, `src/sync-plan.mjs` | Execution and read-only planning |
+| `src/targets.mjs`, `src/targets-*.mjs` | Target registry and adapters |
+| `src/managed.mjs` | Managed-region validation and merging |
 | `src/codex.mjs` | Codex TOML merge |
 | `src/config.mjs` | Config defaults & I/O |
 | `src/template.mjs` | Scaffold + import merge |
@@ -35,10 +36,9 @@ No `npm install` needed — zero runtime dependencies.
 
 ### Adding a new target
 
-1. Define an adapter in `src/targets.mjs` (`id`, `path`, modes, `renderImport` / `renderCopy`).
-2. Add default on/off in `src/config.mjs` → `defaultConfig()`.
-3. Cover it in `test/sync.test.mjs`.
-4. Document it in `README.md` and `README.zh-CN.md`.
+1. Define an adapter in `src/targets-core.mjs` or `src/targets-optional.mjs` (`id`, `path`, `defaultEnabled`, modes, `renderImport` / `renderCopy`).
+2. Cover it in `test/sync.test.mjs`.
+3. Document it in `README.md` and `README.zh-CN.md`.
 
 ### Pull requests
 
@@ -77,9 +77,10 @@ node bin/agent-sync.mjs help
 | 路径 | 作用 |
 |------|------|
 | `bin/agent-sync.mjs` | CLI 入口 |
-| `src/cli.mjs` | 命令与参数 |
-| `src/sync.mjs` | apply / check / plan |
-| `src/targets.mjs` | 各工具适配器 |
+| `src/cli.mjs`、`src/cli-*.mjs` | 命令分发、参数与处理器 |
+| `src/sync.mjs`、`src/sync-plan.mjs` | 执行与只读规划 |
+| `src/targets.mjs`、`src/targets-*.mjs` | target 注册表与适配器 |
+| `src/managed.mjs` | 托管区校验与合并 |
 | `src/codex.mjs` | Codex TOML 合并 |
 | `src/config.mjs` | 配置默认值与读写 |
 | `src/template.mjs` | 脚手架与 import 合并 |
@@ -87,10 +88,9 @@ node bin/agent-sync.mjs help
 
 ### 新增 target
 
-1. 在 `src/targets.mjs` 增加适配器（`id`、`path`、模式、`renderImport` / `renderCopy`）
-2. 在 `src/config.mjs` 的 `defaultConfig()` 里设置默认开关
-3. 在 `test/sync.test.mjs` 补充测试
-4. 同步更新 `README.md` 与 `README.zh-CN.md`
+1. 在 `src/targets-core.mjs` 或 `src/targets-optional.mjs` 增加适配器（`id`、`path`、`defaultEnabled`、模式、`renderImport` / `renderCopy`）
+2. 在 `test/sync.test.mjs` 补充测试
+3. 同步更新 `README.md` 与 `README.zh-CN.md`
 
 ### 提交 PR
 

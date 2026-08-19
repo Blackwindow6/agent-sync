@@ -31,6 +31,9 @@ Creates:
 - `agent-sync.config.json` — enable/disable targets
 - `AGENTS.override.md` entry in `.gitignore` — local Codex overrides (not committed)
 
+Running `init` again preserves the existing source and config. Use `--yes` or `--force` only
+when you intentionally want to regenerate the source; use `--dry-run` to preview initialization.
+
 ## 3. Edit AGENTS.md
 
 At minimum document:
@@ -82,6 +85,8 @@ agent-sync apply
 - `.clinerules`
 - and related files
 
+`AGENTS.override.md` is deliberately excluded because it is private, machine-local guidance.
+
 ## 7. Generate for a subset of tools
 
 ```bash
@@ -118,5 +123,7 @@ agent-sync check
 | `xx path blocked` | Target is hand-written; use `--force` after review, or delete the old file then apply |
 | `AGENTS.md missing` | Run `init` first, or pass `--source` |
 | Codex truncates long docs | Check `status` size; after apply inspect `project_doc_max_bytes` in `.codex/config.toml` |
-| Symlink failures on Windows | Stick to default `auto` / `import` / `copy`; avoid forcing `link` |
+| Codex managed-key conflict | Remove root `project_doc_max_bytes` / `project_doc_fallback_filenames`; set `codexMaxBytes` in agent-sync config for a custom budget |
+| Symlink failures on Windows | Use default `auto` / `import` / `copy`; explicit `link` errors are reported and never fall back to a copy |
+| Invalid mode / unknown target | Fix the config or CLI value shown in the error; invalid values are never silently downgraded |
 | Preview only | `agent-sync apply --dry-run` or `agent-sync diff` |

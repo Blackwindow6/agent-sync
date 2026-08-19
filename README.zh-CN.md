@@ -141,9 +141,12 @@ node bin/agent-sync.mjs -C examples/demo-project status
 --only <ids>        只启用这些 target（逗号分隔）
 --enable <ids>      启用指定 target
 --disable <ids>     禁用指定 target
--y, --yes           跳过确认；init/import 时允许覆盖
+-y, --yes           在 init/import 时覆盖源文件
 -h, --help          帮助
 ```
+
+无效模式、未知 target、缺失参数值，以及 target 不支持的模式组合都会以非零状态码明确失败，
+不会静默降级。
 
 ### 常用示例
 
@@ -175,6 +178,7 @@ agent-sync check
   "source": "AGENTS.md",
   "mode": "auto",
   "protectUnmanaged": true,
+  "allowExternalSymlinks": false,
   "targets": {
     "codex": true,
     "codex-agents": true,
@@ -193,9 +197,11 @@ agent-sync check
 
 | 字段 | 含义 |
 |------|------|
-| `source` | 权威说明文件（通常是 `AGENTS.md`） |
+| `source` | 项目目录内的相对路径，指向权威说明文件（通常是 `AGENTS.md`） |
 | `mode` | 默认同步模式：`auto` / `import` / `copy` / `link` |
 | `protectUnmanaged` | 为 `true` 时，无 `--force` 不覆盖手写目标文件 |
+| `allowExternalSymlinks` | 显式放开 agent-sync 输入文件通过符号链接解析到项目外，默认关闭 |
+| `codexMaxBytes` | 可选的 Codex 文档字节预算正整数（默认 `32768`） |
 | `targets.<id>` | 开关各个适配器 |
 
 源文件也可以放在别处（例如 `docs/AGENT_GUIDE.md`）。开启 `codex-agents` 时，会镜像到根目录 `AGENTS.md`，方便 Codex 发现。
@@ -233,7 +239,7 @@ agent-sync targets
 | **auto**（默认） | 按目标选最优；Windows 上避免脆弱软链 | 大多数人 |
 | **import** | 薄包装，指向 `AGENTS.md`（如 Claude 的 `@AGENTS.md`） | Claude 等 |
 | **copy** | 完整内容 + 托管标记 | Copilot、Cursor MDC 等只读自己文件的工具 |
-| **link** | 符号链接到 `AGENTS.md` | Unix；失败会回退 |
+| **link** | 符号链接到 `AGENTS.md`；失败时明确报错 | 支持符号链接的环境 |
 
 ### 托管区域
 
@@ -362,10 +368,17 @@ agent-sync status
 | 目标文件不存在 | 创建 |
 | 目标由 agent-sync 托管 | 只更新标记内内容 |
 | 手写目标 + `protectUnmanaged: true` | **拦截**，除非 `--force` |
+| 目标是未托管的符号链接 | **拦截**，除非 `--force` |
+| 托管标记损坏 | 明确失败，不重写文件 |
+| 源路径与 target 路径相同 | 跳过该 target，绝不重写源文件 |
 | 标记外的用户备注 | **保留** |
 | `apply --dry-run` | 不写磁盘 |
 
 被拦截时进程 exit code 为 `2`，方便脚本判断。
+源路径必须是项目内相对路径，默认不能通过符号链接解析到项目外；确有此类仓库结构时，
+可显式设置 `allowExternalSymlinks: true`。任何解析到当前项目 `.git` 元数据的路径都会
+被拒绝；生成 target 时也绝不会通过父目录符号链接写到项目外。本地专用的
+`AGENTS.override.md` 不会被 `import` 合并。
 
 ---
 
@@ -375,9 +388,13 @@ agent-sync status
 agent-sync/
 ├── bin/agent-sync.mjs      # CLI 入口
 ├── src/
-│   ├── cli.mjs             # 命令与参数
-│   ├── sync.mjs            # apply / check / plan
-│   ├── targets.mjs         # 各工具适配器
+│   ├── cli.mjs             # 命令分发
+│   ├── cli-*.mjs           # 参数解析与命令处理
+│   ├── sync.mjs            # apply / check 执行
+│   ├── sync-plan.mjs       # 只读规划与安全检查
+│   ├── targets.mjs         # target 注册表
+│   ├── targets-*.mjs       # 各工具适配器
+│   ├── managed.mjs         # 托管区合并逻辑
 │   ├── codex.mjs           # Codex TOML 辅助
 │   ├── config.mjs          # 配置读写
 │   ├── template.mjs        # AGENTS.md 脚手架与 import 合并
@@ -418,6 +435,8 @@ A：可以。配置 `"source": "docs/guide.md"`，并保持 `codex-agents: true`
 
 **Q：Windows 上符号链接怎么办？**  
 A：默认 `auto` 模式尽量不依赖开发者模式/管理员权限，优先用 `import` 或 `copy`。
+显式指定 `link` 时会执行真实的符号链接操作；权限或文件系统不支持时会明确报错，
+不会静默改写成副本。
 
 **Q：怎么关掉 Copilot 生成？**  
 A：配置里设 `"copilot": false`，或 `agent-sync apply --disable copilot`。

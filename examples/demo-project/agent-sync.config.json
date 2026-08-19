@@ -2,6 +2,7 @@
   "source": "AGENTS.md",
   "mode": "auto",
   "protectUnmanaged": true,
+  "allowExternalSymlinks": false,
   "targets": {
     "codex": true,
     "codex-agents": true,

@@ -129,9 +129,12 @@ node bin/agent-sync.mjs -C examples/demo-project status
 --only <ids>        Comma-separated target ids (enable only these)
 --enable <ids>      Enable targets
 --disable <ids>     Disable targets
--y, --yes           Skip prompts; overwrite on init/import
+-y, --yes           Overwrite the source during init/import
 -h, --help          Help
 ```
+
+Invalid modes, unknown targets, missing option values, and mode/target combinations that are
+not supported fail with a non-zero exit code instead of being silently downgraded.
 
 ### Examples
 
@@ -163,6 +166,7 @@ File: **`agent-sync.config.json`** (created by `init`)
   "source": "AGENTS.md",
   "mode": "auto",
   "protectUnmanaged": true,
+  "allowExternalSymlinks": false,
   "targets": {
     "codex": true,
     "codex-agents": true,
@@ -181,9 +185,11 @@ File: **`agent-sync.config.json`** (created by `init`)
 
 | Field | Meaning |
 |-------|---------|
-| `source` | Canonical instruction file (usually `AGENTS.md`) |
+| `source` | Project-relative canonical instruction file (usually `AGENTS.md`) |
 | `mode` | Default sync mode: `auto` / `import` / `copy` / `link` |
 | `protectUnmanaged` | If `true`, refuse to overwrite hand-written targets without `--force` |
+| `allowExternalSymlinks` | Explicit opt-out for repos that intentionally resolve agent-sync input files outside the project |
+| `codexMaxBytes` | Optional positive integer for the Codex document budget (default: `32768`) |
 | `targets.<id>` | Enable/disable each adapter |
 
 You can put the source elsewhere (e.g. `docs/AGENT_GUIDE.md`). With `codex-agents` enabled, agent-sync will mirror it to root `AGENTS.md` for Codex discovery.
@@ -221,7 +227,7 @@ agent-sync targets
 | **auto** (default) | Per-target preferred mode; on Windows, avoids fragile symlinks | Most users |
 | **import** | Thin wrapper pointing at `AGENTS.md` (e.g. Claude `@AGENTS.md`) | Claude, small pointers |
 | **copy** | Full content with managed markers | Copilot, Cursor MDC, tools that only read their own file |
-| **link** | Symlink to `AGENTS.md` | Unix; falls back to import on failure |
+| **link** | Symlink to `AGENTS.md`; failures are reported explicitly | Environments with symlink support |
 
 ### Managed regions
 
@@ -352,10 +358,18 @@ Tips:
 | Target missing | Created |
 | Target managed by agent-sync | Updated inside markers |
 | Target hand-written, `protectUnmanaged: true` | **Blocked** unless `--force` |
+| Target is an unmanaged symlink | **Blocked** unless `--force` |
+| Managed markers are malformed | Fails explicitly without rewriting the file |
+| Source path equals a target path | Target is skipped; the source is never rewritten |
 | User notes outside markers | **Preserved** |
 | `apply --dry-run` | No disk writes |
 
 Blocked files exit with code `2` so scripts can detect them.
+Source paths must be project-relative and, by default, may not resolve outside the selected project
+directory through symlinks. Repositories that intentionally use those links can set
+`allowExternalSymlinks: true`. Paths that resolve into the current project's `.git` metadata are
+always rejected. Generated targets never follow parent-directory symlinks outside the project.
+`AGENTS.override.md` is local-only and is never merged by `import`.
 
 ---
 
@@ -365,9 +379,13 @@ Blocked files exit with code `2` so scripts can detect them.
 agent-sync/
 ├── bin/agent-sync.mjs      # CLI entry
 ├── src/
-│   ├── cli.mjs             # commands & flags
-│   ├── sync.mjs            # apply / check / plan
-│   ├── targets.mjs         # adapters per tool
+│   ├── cli.mjs             # command dispatcher
+│   ├── cli-*.mjs           # argument parsing and command handlers
+│   ├── sync.mjs            # apply / check execution
+│   ├── sync-plan.mjs       # read-only planning and safety checks
+│   ├── targets.mjs         # target registry
+│   ├── targets-*.mjs       # adapters per tool
+│   ├── managed.mjs         # managed-region merge helpers
 │   ├── codex.mjs           # Codex TOML helpers
 │   ├── config.mjs          # config load/save
 │   ├── template.mjs        # AGENTS.md scaffold + import merge
@@ -407,7 +425,9 @@ A: Notes **outside** `<!-- agent-sync:start/end -->` are kept. Content inside th
 A: Yes — set `"source": "docs/guide.md"` and keep `codex-agents: true` so Codex still finds root `AGENTS.md`.
 
 **Q: Symlinks on Windows?**  
-A: Default `auto` mode avoids requiring Developer Mode / admin privileges. Prefer `import` or `copy`.
+A: Default `auto` mode avoids requiring Developer Mode / admin privileges. Prefer `import` or
+`copy`. An explicit `link` mode performs a real symlink operation and reports permission or
+filesystem errors; it does not silently write a copy instead.
 
 **Q: How do I turn off Copilot generation?**  
 A: `"copilot": false` in config, or `agent-sync apply --disable copilot`.

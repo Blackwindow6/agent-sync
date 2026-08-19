@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertRealPath, inspectPath } from "./fsutil.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -47,15 +48,16 @@ export function detectPackageManager(cwd) {
   return "npm";
 }
 
-export function detectProjectName(cwd) {
+export function detectProjectName(cwd, { allowExternalSymlinks = false } = {}) {
   const pkgPath = path.join(cwd, "package.json");
-  if (fs.existsSync(pkgPath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-      if (pkg.name) return pkg.name;
-    } catch {
-      /* ignore */
-    }
+  if (inspectPath(pkgPath).kind !== "missing") {
+    assertRealPath(cwd, pkgPath, {
+      label: "package.json",
+      allowExternalSymlinks,
+      denyGitMetadata: true,
+    });
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    if (pkg.name) return pkg.name;
   }
   return path.basename(cwd);
 }

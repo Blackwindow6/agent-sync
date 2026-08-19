@@ -30,6 +30,9 @@ agent-sync init
 - `agent-sync.config.json` — 开关各工具目标
 - `.gitignore` 中的 `AGENTS.override.md` — 本地个人覆盖（不进 git）
 
+重复执行 `init` 会保留已有源文件与配置。只有明确想重新生成源文件时才使用 `--yes`
+或 `--force`；可先用 `--dry-run` 预览初始化结果。
+
 ## 3. 编辑 AGENTS.md
 
 至少写清楚：
@@ -81,6 +84,8 @@ agent-sync apply
 - `.clinerules`
 - 等
 
+`AGENTS.override.md` 是本机私有规则，因此会被明确排除，不参与导入。
+
 ## 7. 只给部分工具生成
 
 ```bash
@@ -119,5 +124,7 @@ agent-sync check
 | `xx path blocked` | 目标是手写文件；确认后加 `--force`，或删掉旧文件再 apply |
 | `AGENTS.md missing` | 先 `init` 或指定 `--source` |
 | Codex 读不全长文档 | 看 `status` 的 size；apply 后检查 `.codex/config.toml` 的 `project_doc_max_bytes` |
-| Windows 软链失败 | 使用默认 `auto`/`import`/`copy`，不要强开 `link` |
+| Codex 托管键冲突 | 删除 TOML 根级的 `project_doc_max_bytes` / `project_doc_fallback_filenames`；自定义预算请改用 agent-sync 配置的 `codexMaxBytes` |
+| Windows 软链失败 | 使用默认 `auto`/`import`/`copy`；显式 `link` 会明确报错，绝不回退成副本 |
+| 模式无效 / target 未知 | 按错误信息修正配置或 CLI 参数；无效值不会静默降级 |
 | 只想预览 | `agent-sync apply --dry-run` 或 `agent-sync diff` |
